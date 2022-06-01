@@ -1,2 +1,2 @@
 # DWD
-AlL codes / projects worked on during the Serious SQL course.
+AlL codes written / projects worked on during the Serious SQL course.
