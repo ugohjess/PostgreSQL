@@ -1,1 +1,69 @@
 
+> **Basic Exploration:** A quick data exploration of a fictitious dvd rental store.
+> 
+``SELECT
+  *
+FROM
+  dvd_rentals.language;``
+-- Select is very key in exploring data.
+
+``SELECT
+  *
+  FROM dvd_rentals.rental
+  LIMIT 10;``
+  -- Limit is a keyword used to restrict query results.
+
+  ``SELECT
+  country
+  FROM dvd_rentals.country
+  ORDER BY country
+  LIMIT 10;``
+   -- Order by is used to return an explicitly ordered output.
+   
+ `` SELECT
+  country
+  FROM dvd_rentals.country
+  ORDER BY 1 DESC
+  LIMIT 10;``
+--Sorting for any column with numbers, dates, timestamps is done from lowest to highest or latest to earliest for date time related columns.
+
+PRACTICE QUESTIONS
+* What is the  `name`  of the category with the highest  `category_id`  in the  `dvd_rentals.category`  table?
+ 
+  + `` SELECT name, 
+  category_id
+FROM
+  dvd_rentals.category
+ORDER BY
+  category_id desc
+LIMIT
+  5;``
+  
+ * For the films with the longest  `length`, what is the  `title`  of the “R” rated film with the lowest  `replacement_cost`  in  `dvd_rentals.film`  table?
+   + ``SELECT
+  title,
+  length,
+  rating,
+  replacement_cost
+FROM
+  dvd_rentals.film
+ORDER BY
+  length desc,
+  replacement_cost;``
+ * Who was the  `manager`  of the store with the highest  `total_sales`  in the  `dvd_rentals.sales_by_store`  table?
+   + ``SELECT
+  manager,
+  total_sales
+FROM
+  dvd_rentals.sales_by_store
+ORDER BY
+  total_sales desc;``
+  * What is the  `postal_code`  of the city with the 5th highest  `city_id`  in the  `dvd_rentals.address`  table?
+    + `` SELECT
+  postal_code,
+  city_id
+FROM
+  dvd_rentals.address
+ORDER BY
+  city_id desc
+  LIMIT 6;``
