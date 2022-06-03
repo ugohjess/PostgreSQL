@@ -12,7 +12,8 @@ dvd_rentals.rental LIMIT 10;
 
 SELECT
 country
-FROM dvd_rentals.country ORDER BY country LIMIT 10;
+FROM dvd_rentals.country
+ORDER BY country LIMIT 10;
 – Order by is used to return an explicitly ordered output.
 
 SELECT 
