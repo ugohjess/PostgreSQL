@@ -1,69 +1,121 @@
+Basic Exploration: A quick data exploration of a fictitious dvd rental store.
 
-> **Basic Exploration:** A quick data exploration of a fictitious dvd rental store.
-> 
-``SELECT
-  *
-FROM
-  dvd_rentals.language;``
--- Select is very key in exploring data.
+SELECT 
+* FROM 
+dvd_rentals.language;
+– Select is very key in exploring data.
 
-``SELECT
-  *
-  FROM dvd_rentals.rental
-  LIMIT 10;``
-  -- Limit is a keyword used to restrict query results.
+SELECT 
+* FROM 
+dvd_rentals.rental LIMIT 10;
+– Limit is a keyword used to restrict query results.
 
-  ``SELECT
-  country
-  FROM dvd_rentals.country
-  ORDER BY country
-  LIMIT 10;``
-   -- Order by is used to return an explicitly ordered output.
-   
- `` SELECT
-  country
-  FROM dvd_rentals.country
-  ORDER BY 1 DESC
-  LIMIT 10;``
---Sorting for any column with numbers, dates, timestamps is done from lowest to highest or latest to earliest for date time related columns.
+SELECT
+country
+FROM dvd_rentals.country ORDER BY country LIMIT 10;
+– Order by is used to return an explicitly ordered output.
 
-PRACTICE QUESTIONS
-* What is the  `name`  of the category with the highest  `category_id`  in the  `dvd_rentals.category`  table?
- 
-  + `` SELECT name, 
-  category_id
-FROM
-  dvd_rentals.category
-ORDER BY
-  category_id desc
-LIMIT
-  5;``
+SELECT 
+country 
+FROM dvd_rentals.country 
+ORDER BY 1 DESC 
+LIMIT 10;
+–Sorting for any column with numbers, dates, timestamps is done from lowest to highest or latest to earliest for date time related columns.
+
+Practice Questions
+1. What is the name of the category with the highest category_id in the dvd_rentals.category table?
+SELECT 
+name, category_id 
+FROM dvd_rentals.category
+ORDER BY category_id DESC 
+LIMIT 5;
+
+2. For the films with the longest length, what is the title of the “R” rated film with the lowest replacement_cost in dvd_rentals.film table?
+SELECT
+title, length, rating, replacement_cost 
+FROM dvd_rentals.film 
+ORDER BY length desc, replacement_cost;
+
+3. Who was the manager of the store with the highest total_sales in the dvd_rentals.sales_by_store table?
+SELECT 
+manager, total_sales 
+FROM dvd_rentals.sales_by_store 
+ORDER BY total_sales desc;
+
+4.What is the postal_code of the city with the 5th highest city_id in the dvd_rentals.address table?
+SELECT postal_code, city_id 
+FROM dvd_rentals.address 
+ORDER BY city_id desc 
+LIMIT 6;
+
   
- * For the films with the longest  `length`, what is the  `title`  of the “R” rated film with the lowest  `replacement_cost`  in  `dvd_rentals.film`  table?
-   + ``SELECT
-  title,
-  length,
-  rating,
-  replacement_cost
-FROM
-  dvd_rentals.film
-ORDER BY
-  length desc,
-  replacement_cost;``
- * Who was the  `manager`  of the store with the highest  `total_sales`  in the  `dvd_rentals.sales_by_store`  table?
-   + ``SELECT
-  manager,
-  total_sales
-FROM
-  dvd_rentals.sales_by_store
-ORDER BY
-  total_sales desc;``
-  * What is the  `postal_code`  of the city with the 5th highest  `city_id`  in the  `dvd_rentals.address`  table?
-    + `` SELECT
-  postal_code,
-  city_id
-FROM
-  dvd_rentals.address
-ORDER BY
-  city_id desc
-  LIMIT 6;``
+  Some more exploratory functions:
+SELECT 
+COUNT(*) as row_total 
+FROM dvd_rentals.film_list;
+– Count returns the number of rows in a dataset. This is important to know as data size has an effect on performance.
+–As is an alias which is used to specify a name for an expression in the select statement.
+
+SELECT 
+DISTINCT rating 
+FROM dvd_rentals.film_list;
+–Distinct is a keyword to obtain unique values from a target column.
+
+SELECT 
+COUNT(DISTINCT rating) as unique_rating_count 
+FROM dvd_rentals.film_list;
+– Count function with the distinct keyword finds the number of unique values of a specific column.
+
+SELECT 
+rating, COUNT(rating) as frequency 
+FROM dvd_rentals.film_list 
+GROUP BY rating;
+–Group by is a keyword used to divide data into different groups based off the values of selected columns.
+
+SELECT 
+rating, category, 
+COUNT(rating) as frequency,
+ROUND(100 * COUNT(*) / SUM(COUNT(*)) OVER(), 2) as percentage 
+FROM dvd_rentals.film_list 
+GROUP BY rating, category 
+ORDER BY frequency DESC 
+LIMIT 5;
+–Group by keyword can take on additional columns in the grouping expressions at the bottom of the SQL statement.
+
+Practice Questions
+1. Which actor_id has the most number of unique film_id records in the dvd_rentals.film_actor table?
+SELECT 
+actor_id, 
+COUNT(DISTINCT film_id) as film_id_count 
+FROM dvd_rentals.film_actor 
+GROUP BY actor_id 
+ORDER BY film_id_count 
+DESC LIMIT 5;
+
+2. How many distinct fid values are there for the 3rd most common price value in the dvd_rentals.nicer_but_slower_film_list table?
+SELECT 
+price, COUNT(DISTINCT fid) as fid_count 
+FROM dvd_rentals.nicer_but_slower_film_list 
+GROUP BY price 
+ORDER BY fid_count 
+DESC LIMIT 5;
+
+3. How many unique country_id values exist in the dvd_rentals.city table?
+SELECT 
+COUNT(DISTINCT country_id) 
+FROM dvd_rentals.city;
+
+4. What percentage of overall total_sales does the Sports category make up in the dvd_rentals.sales_by_film_category table?
+SELECT 
+category, 
+ROUND(100 * total_sales / SUM(total_sales) OVER(), 2) as percentage 
+FROM dvd_rentals.sales_by_film_category;
+
+5. What percentage of unique fid values are in the Children category in the dvd_rentals.film_list table?
+SELECT 
+category, 
+ROUND(100 * COUNT(*) / SUM(COUNT(*)) OVER(), 2) as percentage 
+FROM dvd_rentals.film_list 
+GROUP BY category;
+ORDER BY city_id DESC
+ LIMIT 6;
