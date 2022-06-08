@@ -120,3 +120,238 @@ FROM dvd_rentals.film_list
 GROUP BY category;
 ORDER BY city_id DESC
  LIMIT 6;
+
+  Data Cleaning
+SELECT 
+measure, 
+COUNT(*) as frequency, 
+ROUND(100 * COUNT(*) / SUM (COUNT(*)) OVER (), 2) as percentage 
+FROM health.user_logs 
+GROUP BY measure 
+ORDER BY frequency DESC;
+– Group by and Order by DESC are very useful in identifying the number of occurrence of values. Here, the number and percentage of duplicate values were identified
+
+SELECT 
+id, 
+COUNT(*) as frequency, 
+ROUND(100 * COUNT(*) / SUM (COUNT(*)) OVER (), 2) as percentage 
+FROM health.user_logs 
+GROUP BY id 
+ORDER BY frequency DESC;
+–The number of occurrence of ids was found and those with an occurrence greater than one have duplicates
+
+SELECT 
+measure_value,
+COUNT(*) as frequency FROM health.user_logs 
+GROUP BY measure_value 
+ORDER BY frequency DESC;
+–This shows the number of occurrence of each measure_value
+
+SELECT 
+measure, 
+count(*) FROM health.user_logs 
+WHERE measure_value = 0 
+GROUP BY measure;
+–Further exploration showed that most of the measure_value was 0 when selected measure was ‘blood_pressure’.
+
+SELECT
+* FROM health.user_logs 
+WHERE measure_value = 0 
+AND measure = 'blood_pressure';
+–This results of this code solidifies the suspicions we had about the measure_value being 0 when selected measure was ‘blood_pressure’.
+
+Ways of identifying duplicates
+
+1. Use of subquery: A subquery is a query that appears inside another query statement. Subqueries are also referred to as sub- SELECT sor nested SELECT.
+SELECT 
+COUNT(*) 
+FROM 
+( SELECT 
+DISTINCT * 
+FROM health.user_logs 
+) as subquery;
+–An alias is important when writing a subquery.
+
+2. CTE stands for Common Table Expression. A CTE is a SQL query that manipulates existing data and stores the data outputs as a new reference, 
+very similar to storing data in a new temporary Excel sheet. it can be referenced with a SELECT, INSERT, UPDATE, or DELETE statement.
+
+WITH logs as
+( SELECT 
+DISTINCT * FROM health.user_logs 
+)
+SELECT 
+COUNT(*) 
+FROM logs;
+– logs in this case is the name of the common table expression.
+
+3. Temporary tables is one way of identifying duplicates , it is used best only the deduplicated data will be further analyzed.
+The main benefit of using temporary tables is removing the need to always run the same DISTINCT command every time you want to run a query on the deduplicated records.
+
+CREATE TEMP TABLE cleaned_health_logs as 
+SELECT 
+DISTINCT * 
+FROM health.user_logs;
+–This will not return an output
+
+SELECT 
+* FROM cleaned_health_logs;
+–This returns your distinct user logs in the deduplicated temporary table
+
+Danny’s recommended method and my personal best.
+SELECT 
+id, 
+log_date,
+measure, 
+measure_value, 
+systolic, 
+diastolic, 
+COUNT(*) as frequency 
+FROM health.user_logs 
+GROUP BY id, 
+log_date, 
+measure, 
+measure_value,
+systolic, 
+diastolic 
+ORDER BY frequency DESC;
+– This code will count each record/row and how often they occur. Those with a count greater than one have duplicates.
+
+A common table expression can also be used to identify values these duplicates.
+WITH groupby_counts AS 
+( SELECT
+id, 
+log_date, 
+measure, 
+measure_value, 
+systolic,
+diastolic, 
+COUNT(*) AS frequency 
+FROM health.user_logs 
+GROUP BY
+id, 
+log_date, 
+measure, 
+measure_value, 
+systolic,
+diastolic 
+) SELECT 
+* 
+FROM groupby_counts
+WHERE frequency > 1 
+ORDER BY frequency 
+DESC LIMIT 10;
+
+Practice Questions
+1. Which id value has the most number of duplicate records in the health.user_logs table?
+
+WITH cleaned_data as
+( SELECT 
+COUNT(*) as frequency 
+FROM health.user_logs 
+GROUP BY 
+id, 
+log_date, 
+measure, 
+measure_value, 
+systolic,
+diastolic
+) SELECT
+id,
+sum(frequency) as total_duplicate_rows 
+FROM cleaned_data 
+WHERE frequency > 1 
+GROUP BY id 
+ORDER BY total_duplicate_rows DESC 
+LIMIT 10;
+
+2. Which log_date value had the most duplicate records after removing the max duplicate id value from question 1?
+
+WITH cleaned_data as (
+SELECT 
+COUNT(*) as frequency 
+FROM health.user_logs 
+WHERE id != '054250c692e07a9fa9e62e345231df4b54ff435d' 
+GROUP BY id, log_date, measure, measure_value, systolic, diastolic ) 
+SELECT 
+log_date, 
+sum(frequency) as total_duplicate_rows 
+FROM cleaned_data 
+WHERE frequency > 1 group by 1 
+ORDER BY total_duplicate_rows DESC 
+LIMIT 10;
+
+3. Which measure_value had the most occurrences in the health.user_logs value when measure = 'weight'?
+
+SELECT 
+measure_value, 
+count(*) as frequency from health.user_logs 
+WHERE measure = 'weight' 
+GROUP BY 1 
+ORDER BY frequency DESC 
+LIMIT 1;
+
+4. How many single duplicated rows exist when measure = 'blood_pressure' in the health.user_logs? How about the total number of duplicate records in the same table?
+
+WITH row_counts as (
+SELECT
+id, 
+log_date, 
+measure, 
+measure_value, 
+systolic,
+diastolic,
+COUNT(*) as frequency
+FROM health.user_logs 
+WHERE measure = 'blood_pressure' 
+GROUP BY id, 
+log_date, 
+measure, 
+measure_value, 
+systolic,
+diastolic
+) SELECT 
+COUNT(*) as single_rows, 
+SUM(frequency) as total_duplicate_rows 
+FROM row_counts 
+WHERE frequency > 1;
+
+5.What percentage of records measure_value = 0 when measure = 'blood_pressure' in the health.user_logs table? How many records are there also for this same condition?
+
+WITH all_measure_values as ( 
+SELECT 
+measure_value, 
+COUNT(*) as total,
+SUM(COUNT(*)) OVER() as overall_total 
+FROM health.user_logs 
+WHERE measure = 'blood_pressure' 
+GROUP BY measure_value 
+) SELECT 
+measure_value,
+total, 
+overall_total, 
+ROUND(100 * total / overall_total, 2) as percentage
+FROM all_measure_values
+WHERE measure_value = 0
+
+6. What percentage of records are duplicates in the health.user_logs table?
+
+WITH groupby_counts AS (
+SELECT
+id, 
+log_date, 
+measure, 
+measure_value, 
+systolic,
+diastolic,
+COUNT(*) AS frequency 
+FROM health.user_logs 
+GROUP BY
+id, 
+log_date, 
+measure, 
+measure_value, 
+systolic,
+diastolic 
+) SELECT 
+ROUND( 100 * SUM( CASE WHEN frequency > 1 THEN frequency - 1 ELSE 0 END ) :: NUMERIC / SUM(frequency), 2 ) AS duplicate_percentage 
+FROM groupby_counts;
