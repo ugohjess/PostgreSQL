@@ -1,0 +1,80 @@
+Some Statistical Functions
+
+SELECT 
+AVG(measure_value) 
+FROM health.user_logs;
+– Average which used to find the mean of a column in a dataset.
+
+SELECT 
+measure,
+ROUND(AVG(measure_value), 2) as average,
+COUNT(*) as counts
+FROM health.user_logs 
+GROUP BY 1 
+ORDER BY 2 DESC;
+–Finding the mean of each measure to observe differences.
+
+SELECT 
+PERCENTILE_CONT(0.5) WITHIN GROUP ( ORDER BY measure_value ) as median,
+MODE() WITHIN GROUP( ORDER BY measure_value ) as mode, AVG(measure_value) as mean 
+FROM health.user_logs
+WHERE measure = 'weight';
+– The mean of the weight measure showed inconsistencies within the dataset. The mode and median was calculated for certainties.
+–0.5 is used as argument within the percentile_cont function to signify that we are trying to identify the middle number of the dataset.
+
+SELECT 
+MAX(measure_value) as maximum, 
+MIN(measure_value) as minimum, 
+MAX(measure_value) - MIN(measure_value) as range_value 
+FROM health.user_logs 
+WHERE measure = 'weight';
+– Min, Max and Range are some other summary statistics function.
+– Min returns the minimum value , Max returns the maximum value while range returns the difference between the maximum and minimum value in a dataset.
+
+SELECT 
+'weight' as measure, 
+ROUND(MAX(measure_value), 2) as maximum_value, 
+ROUND(MIN(measure_value), 2) as minimum_value, 
+ROUND(AVG(measure_value), 2) as mean, 
+ROUND( CAST( PERCENTILE_CONT(0.5) WITHIN GROUP( ORDER BY measure_value ) AS NUMERIC ), 2 ) as median,
+ROUND( MODE() WITHIN GROUP ( ORDER BY measure_value ), 2 ) AS mode_value, 
+ROUND(STDDEV(measure_value), 2) AS standard_deviation, 
+ROUND(VARIANCE(measure_value), 2) AS variance_value 
+FROM health.user_logs
+WHERE measure = 'weight';
+–Variance and Standard deviation are summary statistics used to describe the spread of data about the mean value. 
+-Some values are spread either one standarr deviation, two standard deviation or three standard eviation away from the mean.
+
+Practice Questions
+
+1. What is the average, median and mode values of blood glucose values to 2 decimal places?
+SELECT 
+'blood_glucose' as measure, 
+ROUND(AVG(measure_value), 2) as mean, 
+ROUND( CAST( PERCENTILE_CONT(0.5) WITHIN GROUP( ORDER BY measure_value ) AS NUMERIC ), 2 ) as median, 
+ROUND( MODE() WITHIN GROUP ( ORDER BY measure_value ), 2 ) AS mode_value 
+FROM health.user_logs 
+WHERE measure = 'blood_glucose';
+
+2. What is the most frequently occuring measure_value value for all blood glucose measurements?
+SELECT 
+measure_value, 
+count(*) AS frequency 
+FROM health.user_logs 
+WHERE measure = 'blood_glucose' 
+GROUP BY measure_value 
+ORDER BY frequency DESC 
+LIMIT 10;
+
+3. Calculate the 2 Pearson Coefficient of Skewness for blood glucose measures given the following formulas:
+WITH coefficients AS ( 
+SELECT AVG(measure_value) AS mean,
+ROUND( cast( PERCENTILE_CONT(0.5) WITHIN GROUP ( ORDER BY measure_value ) AS NUMERIC ), 2 ) AS median, 
+ROUND ( mode() within group( order by measure_value ), 2 ) as mode,
+ROUND(STDDEV(measure_value), 2) AS standard_deviation 
+FROM health.user_logs 
+WHERE measure = 'blood_glucose' 
+) SELECT 
+(mean - mode) / standard_deviation as mode_skewness, 
+3 * ((mean - median) / standard_deviation) as median_skewness
+FROM coefficients;
