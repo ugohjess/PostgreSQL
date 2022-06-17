@@ -10,7 +10,6 @@ WHERE measure = 'weight';
 
 –Given that percentile values have been calculated and dataset is split into 100 buckets , a GROUP BY can be used on the percentile column from the previous table to 
 calculate our MIN and MAX measure_value ranges for each bucket and also the COUNT of records for the percentile_counts field. This can be done with CTEs.
-
 WITH percentile_values AS (
 SELECT 
 measure_value, 
