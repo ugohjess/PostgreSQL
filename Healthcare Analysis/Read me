@@ -1,0 +1,5 @@
+An online survey was conducted by Healthcare XYZ to identify the relationship between a person's weight, blood pressure and blood glucose. 
+Due to the error of manual entry and network downtim,the data was not fit for analytical processes.
+The major task was to improve the standard of data in respect to consistency, accuracy and uniqueness
+
+PostgreSQL was used to query the dataset and written codes can the found in the repositories below.
