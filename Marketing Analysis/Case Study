@@ -1,1 +1,128 @@
+-- The major tables used below have been previously created and they are:
+-- joined_dataset: A table created  for customer insights and movie recommendations --
+-- actor_joined_datasets: A table created  for actor insights and movie recommendations --
+-- Check Table joins reppository for the join codes and explanation --
 
+
+1. What is the average percentile ranking for each customer in their top category rounded to the nearest 2 decimal places?
+
+--cte is used to get the rental count per category --
+
+WITH category_rental_count AS (
+  SELECT
+    customer_id,
+    category_name,
+    COUNT(*) as rental_count
+  FROM
+    joined_dataset
+  GROUP BY
+    customer_id,
+    category_name
+),
+
+--another cte is used to calculate the dense_rank, and percent_rank values --
+
+percent_rank AS(
+  SELECT
+    category_rental_count.*,
+    DENSE_RANK() OVER(
+      PARTITION BY customer_id
+      ORDER BY
+        rental_count DESC
+    ) as category_rank,
+    PERCENT_RANK() OVER(
+      PARTITION BY customer_id
+      ORDER BY
+        rental_count
+    ) as category_percent_rank
+  FROM
+    category_rental_count
+)
+SELECT
+  customer_id,
+  -- the resulting percent_rank value is converted to numeric data type to avoid floor division --
+  ROUND(AVG(category_percent_rank :: NUMERIC), 2) as average_percent_rank
+FROM
+  percent_rank
+GROUP BY
+  customer_id;
+  
+  
+  2. What is the 80th percentile of films watched featuring each customer’s favourite actor? 4
+
+WITH actor_count AS (
+  SELECT
+    customer_id,
+    actor_id,
+    COUNT(*) as occurence_count
+  FROM
+    actor_joined_dataset
+  GROUP BY
+    customer_id,
+    actor_id
+),
+
+actor_ranks AS (
+SELECT
+  customer_id,
+  actor_id,
+  occurence_count,
+  DENSE_RANK() OVER (
+    PARTITION BY customer_id
+    ORDER BY
+      occurence_count DESC
+  ) as actor_occurence_rank
+FROM
+  actor_count
+  )
+
+  SELECT PERCENTILE_CONT(
+    0.8) WITHIN GROUP
+    (ORDER BY
+      occurence_count
+  )
+FROM
+  actor_ranks WHERE actor_occurence_rank = 1
+  
+  
+  3. How many customers were included in the email campaign?
+
+-- All customers on the campaign list make up the email campaign, to get the number count the number of customer_id--
+
+SELECT
+  count(customer_id)
+from
+  dvd_rentals.customer;
+  
+
+4. What is the most popular top category? 
+
+-- The top category would be the category with the highest number of rentals --
+
+SELECT
+  category_name,
+  count(*) as category_count
+FROM
+  joined_dataset
+GROUP BY
+  category_name
+ORDER BY
+  category_count DESC;
+  
+  5. What is the 4th most popular top category? 
+
+SELECT
+  category_name,
+  count(*) as category_count
+FROM
+  joined_dataset
+GROUP BY
+  category_name
+ORDER BY
+  category_count DESC
+  LIMIT 4;
+  
+  
+  6. Out of all the possible films - what percentage coverage do we have in our recommendations?
+
+  7. Which film title was the most recommended for all customers?
