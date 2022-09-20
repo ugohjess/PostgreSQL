@@ -124,5 +124,17 @@ ORDER BY
   
   
   6. Out of all the possible films - what percentage coverage do we have in our recommendations?
+  
 
   7. Which film title was the most recommended for all customers?
+  
+  
+  8. Which actor was the most popular for all customers?
+  SELECT
+  actor,
+  count(*) as actor_count
+from
+  rental_updated_dataset
+  GROUP BY actor
+  ORDER BY actor_count DESC
+  ;
