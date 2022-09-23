@@ -4,137 +4,182 @@
 -- Check Table joins reppository for the join codes and explanation --
 
 
-1. What is the average percentile ranking for each customer in their top category rounded to the nearest 2 decimal places?
+Which film title was the most recommended for all customers?
+WITH all_recomendations AS (
+SELECT
+title
+FROM
+category_recommendations
 
---cte is used to get the rental count per category --
+UNION ALL
 
-WITH category_rental_count AS (
-  SELECT
-    customer_id,
-    category_name,
-    COUNT(*) as rental_count
-  FROM
-    joined_dataset
-  GROUP BY
-    customer_id,
-    category_name
-),
-
---another cte is used to calculate the dense_rank, and percent_rank values --
-
-percent_rank AS(
-  SELECT
-    category_rental_count.*,
-    DENSE_RANK() OVER(
-      PARTITION BY customer_id
-      ORDER BY
-        rental_count DESC
-    ) as category_rank,
-    PERCENT_RANK() OVER(
-      PARTITION BY customer_id
-      ORDER BY
-        rental_count
-    ) as category_percent_rank
-  FROM
-    category_rental_count
+SELECT
+title
+FROM
+actor_recommendations
 )
 SELECT
-  customer_id,
-  -- the resulting percent_rank value is converted to numeric data type to avoid floor division --
-  ROUND(AVG(category_percent_rank :: NUMERIC), 2) as average_percent_rank
+title,
+COUNT(*) AS recomendation_counts
 FROM
-  percent_rank
+all_recomendations
 GROUP BY
-  customer_id;
-  
-  
-  2. What is the 80th percentile of films watched featuring each customer’s favourite actor? 4
+title
+ORDER BY
+recomendation_counts DESC;
 
-WITH actor_count AS (
-  SELECT
-    customer_id,
-    actor_id,
-    COUNT(*) as occurence_count
-  FROM
-    actor_joined_dataset
-  GROUP BY
-    customer_id,
-    actor_id
+What is the average percentile ranking for each customer in their top category rounded to the nearest 2 decimal places?
+SELECT
+ROUND(AVG(percentile::NUMERIC), 2)
+FROM first_category_insights;
+
+What is the 80th percentile of films watched featuring each customer’s favourite actor? 4
+SELECT
+PERCENTILE_CONT(0.8) WITHIN GROUP (
+ORDER BY
+rental_count
+)
+FROM
+top_actor_counts;
+
+How many customers were included in the email campaign?
+– All customers on the campaign list make up the email campaign, to get the number count the number of customer_id–
+
+SELECT
+count(customer_id)
+from
+dvd_rentals.customer;
+
+Out of all the possible films - what percentage coverage do we have in our recommendations?
+WITH all_recommendations AS (
+SELECT
+title
+FROM
+category_recommendations
+UNION
+SELECT
+title
+FROM
+actor_recommendations
 ),
-
-actor_ranks AS (
+recommendations AS (
 SELECT
-  customer_id,
-  actor_id,
-  occurence_count,
-  DENSE_RANK() OVER (
-    PARTITION BY customer_id
-    ORDER BY
-      occurence_count DESC
-  ) as actor_occurence_rank
+COUNT(DISTINCT title) AS _count
 FROM
-  actor_count
-  )
-
-  SELECT PERCENTILE_CONT(
-    0.8) WITHIN GROUP
-    (ORDER BY
-      occurence_count
-  )
-FROM
-  actor_ranks WHERE actor_occurence_rank = 1
-  
-  
-  3. How many customers were included in the email campaign?
-
--- All customers on the campaign list make up the email campaign, to get the number count the number of customer_id--
-
+all_recommendations
+),
+all_films AS (
 SELECT
-  count(customer_id)
-from
-  dvd_rentals.customer;
-  
-
-4. What is the most popular top category? 
-
--- The top category would be the category with the highest number of rentals --
-
-SELECT
-  category_name,
-  count(*) as category_count
+COUNT(DISTINCT title) AS _count
 FROM
-  joined_dataset
+dvd_rentals.film
+)
+SELECT
+all_films._count AS all,
+recommendations._count AS recommended,
+ROUND(
+100 * recommendations._count :: NUMERIC / all_films._count :: NUMERIC
+) AS coverage_percentage
+FROM
+recommendations
+CROSS JOIN all_films;
+
+What is the most popular top category?
+– The top category would be the category with the highest number of rentals –
+SELECT
+category_name,
+count(*) as category_count
+FROM
+first_category_insights
 GROUP BY
-  category_name
+category_name
 ORDER BY
-  category_count DESC;
-  
-  5. What is the 4th most popular top category? 
+category_count DESC
+LIMIT
+1;
+
+What is the 4th most popular top category?
+SELECT
+category_name,
+count(*) as category_count
+FROM
+first_category_insights
+GROUP BY
+category_name
+ORDER BY
+category_count DESC
+LIMIT
+4;
+
+Which actor was the most popular for all customers?
+SELECT
+actor,
+count(*) as actor_count
+from
+rental_updated_dataset
+GROUP BY actor
+ORDER BY actor_count DESC
+;
+
+What is the cumulative distribution of the top 5 percentile values for the top category from the first_category_insights table rounded to the nearest round percentage
+SELECT
+ROUND(percentile) AS percentile,
+COUNT(*),
+ROUND(
+100 * CUME_DIST() OVER (
+ORDER BY
+ROUND(percentile)
+)
+) AS cumulative_distribution
+FROM
+first_category_insights
+GROUP BY
+1
+ORDER BY
+1;
+
+What is the median of the second category percentage of entire viewing history?
 
 SELECT
-  category_name,
-  count(*) as category_count
-FROM
-  joined_dataset
-GROUP BY
-  category_name
+PERCENTILE_CONT(0.5) WITHIN GROUP(
 ORDER BY
-  category_count DESC
-  LIMIT 4;
-  
-  
-  6. Out of all the possible films - what percentage coverage do we have in our recommendations?
-  
+total_percentage
+)
+FROM
+second_category_insights
 
-  7. Which film title was the most recommended for all customers?
-  
-  
-  8. Which actor was the most popular for all customers?
-  SELECT
-  actor,
-  count(*) as actor_count
-from
-  rental_updated_dataset
-  GROUP BY actor
-  ORDER BY actor_count DESC
-  ;
+What was the average number of films watched by each customer?
+WITH movies_watched_count AS(
+SELECT
+customer_id,
+SUM(rental_count) as counts
+FROM
+category_counts
+GROUP BY
+customer_id
+)
+SELECT
+ROUND(AVG(counts))
+FROM
+movies_watched_count;
+
+What is the top combination of top 2 categories and how many customers if the order is relevant (e.g. Horror and Drama is a different combination to Drama and Horror)
+SELECT
+cat_1,
+cat_2,
+COUNT(*) AS customer_count
+FROM
+final_data_asset
+GROUP BY
+cat_1,
+cat_2
+ORDER BY
+3 DESC
+LIMIT
+5;
+
+How many films on average had customers already seen that feature their favourite actor rounded to closest integer?
+SELECT
+CEILING(AVG(rental_count))
+FROM
+top_actor_counts;
