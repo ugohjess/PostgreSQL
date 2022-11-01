@@ -1,0 +1,154 @@
+
+CURRENT ANALYSIS
+
+1.  What is the full name of the employee with the highest salary?
+
+SELECT
+  CONCAT_WS(' ', first_name, last_name) AS employee_name,
+  salary
+FROM
+  mv_employees.employee
+  INNER JOIN mv_employees.current_employee_snapshot ON employee.id = current_employee_snapshot.employee_id
+ORDER BY
+  salary DESC
+  LIMIT
+  1;;
+  
+2.  How many current employees have the equal longest time in their current positions?
+
+SELECT
+  title_tenure_years,
+  COUNT(*) AS employee_count
+FROM
+  mv_employees.current_employee_snapshot
+GROUP BY
+  title_tenure_years
+ORDER BY
+  title_tenure_years DESC;
+
+3.  Which department has the greatest number of current employees?
+Development
+
+SELECT
+  department,
+  COUNT(*) as frequency
+FROM
+  mv_employees.current_employee_snapshot
+GROUP BY
+  department
+ORDER BY
+  frequency DESC
+LIMIT
+  1;
+  
+4.  What is the largest difference between minimimum and maximum salary values for all current employees?
+
+SELECT
+  MAX(salary) - MIN(salary) as Difference
+FROM
+  mv_employees.current_employee_snapshot;
+  
+5.  How many male employees are above the average salary value for the  `Production`  department? 14999
+ 
+WITH production_male_earners AS (
+  SELECT
+    gender,
+    salary,
+    AVG(salary) OVER () AS avg_salary
+  FROM
+    mv_employees.current_employee_snapshot
+  WHERE
+    department = 'Production'
+)
+SELECT
+  SUM(
+    CASE
+      WHEN salary > avg_salary THEN 1
+      ELSE 0
+    END
+  ) AS above_average_employee_count
+FROM
+  production_male_earners
+WHERE
+  gender = 'M';
+  
+6.  Which title has the highest average salary for male employees?
+
+SELECT
+  title,
+  avg(salary) as avg_salary
+FROM
+  mv_employees.current_employee_snapshot
+WHERE
+  gender = 'M'
+GROUP BY
+  title
+ORDER BY
+  avg_salary;
+  
+7.  Which department has the highest average salary for female employees?
+
+SELECT
+  department,
+  avg(salary) as avg_salary
+FROM
+  mv_employees.current_employee_snapshot
+WHERE
+  gender = 'F'
+GROUP BY
+  department
+ORDER BY
+  avg_salary DESC; 
+  
+8.  Which department has the most female employees?
+
+SELECT
+  department,
+  COUNT(*) AS frequency
+FROM
+  mv_employees.current_employee_snapshot
+  WHERE
+  gender = 'F'
+GROUP BY
+  department
+ORDER BY
+  frequency DESC;
+
+  
+9.  What is the gender ratio in the department which has the highest average male salary and what is the average male salary value for that department?
+
+WITH department_cte AS (
+  SELECT
+    department,
+    ROUND(AVG(salary)) as avg_salary
+  FROM
+    mv_employees.current_employee_snapshot
+  WHERE
+    gender = 'M'
+  GROUP BY
+    department
+  ORDER BY
+    avg_salary DESC
+  LIMIT
+    1
+)
+SELECT
+  gender,
+  avg_salary,
+  COUNT(*) AS employee_count
+FROM
+  mv_employees.current_employee_snapshot
+  INNER JOIN department_cte ON current_employee_snapshot.department = department_cte.department
+GROUP BY
+  gender,
+  avg_salary;
+   
+10.  HR Analytica want to change the average salary increase percentage value to 2 decimal places - what will the new value be for males for the company level dashboard?
+
+SELECT
+  ROUND(AVG(salary_percentage_change), 2) AS avg_salary_percentage_change
+FROM
+  mv_employees.current_employee_snapshot
+WHERE
+  gender = 'M';
+
